@@ -1,3 +1,4 @@
 .synctex.gz
 .DS_Store
 _minted*/
+.venv/
