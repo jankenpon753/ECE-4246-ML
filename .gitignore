@@ -1,4 +1,5 @@
-.synctex.gz
+*.synctex.*
 .DS_Store
 _minted*/
 .venv/
+*.bbl
