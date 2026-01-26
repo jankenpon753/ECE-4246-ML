@@ -46,11 +46,65 @@
 \maketitle
 
 \section{Theory and Introduction}
-Linear Regression and Logistic Regression are fundamental algorithms in supervised machine learning. Linear Regression attempts to model the relationship between a scalar response and one or more explanatory variables by fitting a linear equation to observed data \cite{bishop2006pattern}. The objective is to minimize the difference between the predicted value and the actual value, typically quantified by the Mean Squared Error (MSE).
+Linear Regression and Logistic Regression are fundamental algorithms in supervised machine learning. In this experiment, both algorithms were implemented from first principles using Python (NumPy and Pandas) to analyze their mathematical properties and performance across regression and classification domains.
 
-Logistic Regression, despite its name, is a classification algorithm used to estimate the probability that a given instance belongs to a particular class. It transforms the output of a linear equation using the Sigmoid function, mapping predictions to a probability range between 0 and 1 \cite{hastie2009elements}. The cost function used is the Log Loss (Binary Cross-Entropy), which is convex and suitable for gradient-based optimization.
+\subsection{Linear Regression}
+Linear Regression models the relationship between a dependent variable $y$ and one or more independent variables $X$ by fitting a linear equation to observed data \cite{bishop2006pattern}.
 
-In this experiment, both algorithms were implemented using Python (NumPy and Pandas) and applied to both problem domains (regression and classification) to observe their behavior and limitations.
+\subsubsection{Hypothesis Function}
+The hypothesis function $h_\theta(x)$ approximates the target value as a weighted sum of the input features:
+\begin{equation}
+    h_\theta(x) = \theta_0 + \theta_1 x_1 + \theta_2 x_2 + \dots + \theta_n x_n = \theta^T x
+\end{equation}
+where $\theta$ represents the parameter vector (weights and bias) and $x$ represents the feature vector.
+
+\subsubsection{Cost Function (Mean Squared Error)}
+To measure the accuracy of the hypothesis, the Mean Squared Error (MSE) cost function $J(\theta)$ is defined as the average of the squared differences between predicted and actual values:
+\begin{equation}
+    J(\theta) = \frac{1}{2m} \sum_{i=1}^{m} \left( h_\theta(x^{(i)}) - y^{(i)} \right)^2
+\end{equation}
+where $m$ is the number of training examples. The factor $\frac{1}{2}$ is included to simplify the derivative during gradient calculation.
+
+\subsubsection{Optimization (Gradient Descent)}
+The parameters $\theta$ are updated iteratively to minimize $J(\theta)$ using the Gradient Descent algorithm:
+\begin{equation}
+    \theta_j := \theta_j - \alpha \frac{\partial}{\partial \theta_j} J(\theta)
+\end{equation}
+Substituting the derivative of the MSE, the update rule becomes:
+\begin{equation}
+    \theta_j := \theta_j - \alpha \frac{1}{m} \sum_{i=1}^{m} \left( h_\theta(x^{(i)}) - y^{(i)} \right) x_j^{(i)}
+\end{equation}
+where $\alpha$ is the learning rate.
+
+\subsection{Logistic Regression}
+Logistic Regression is a classification algorithm used to estimate the probability that a given instance belongs to a particular class (e.g., $y=1$) \cite{hastie2009elements}.
+
+\subsubsection{Sigmoid Activation and Hypothesis}
+Unlike Linear Regression, the output is transformed using the Sigmoid (logistic) function $g(z)$ to map predictions to the range $[0, 1]$:
+\begin{equation}
+    g(z) = \frac{1}{1 + e^{-z}}
+\end{equation}
+
+
+[Image of Sigmoid function graph]
+
+The hypothesis is therefore defined as the probability $P(y=1|x;\theta)$:
+\begin{equation}
+    h_\theta(x) = g(\theta^T x) = \frac{1}{1 + e^{-\theta^T x}}
+\end{equation}
+
+\subsubsection{Cost Function (Log Loss)}
+The MSE function is non-convex for Logistic Regression, which can lead to local minima. Instead, the Log Loss (Binary Cross-Entropy) function is used:
+\begin{equation}
+    J(\theta) = -\frac{1}{m} \sum_{i=1}^{m} \left[ y^{(i)} \log(h_\theta(x^{(i)})) + (1 - y^{(i)}) \log(1 - h_\theta(x^{(i)})) \right]
+\end{equation}
+This cost function penalizes confident wrong predictions heavily and is convex, ensuring a global minimum.
+
+\subsubsection{Gradient Descent Update}
+The gradient of the Log Loss function is mathematically identical to that of Linear Regression, though the hypothesis $h_\theta(x)$ definition differs:
+\begin{equation}
+    \theta_j := \theta_j - \alpha \frac{1}{m} \sum_{i=1}^{m} \left( h_\theta(x^{(i)}) - y^{(i)} \right) x_j^{(i)}
+\end{equation}
 
 \section{Methodology}
 The implementation was divided into four distinct tasks. For all tasks, the dataset was split into training (80\%) and testing (20\%) sets. Feature scaling (Standardization) was applied where necessary to ensure convergence of Gradient Descent.
