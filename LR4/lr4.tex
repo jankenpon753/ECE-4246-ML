@@ -1,0 +1,184 @@
+\documentclass[11pt]{article}
+\usepackage[a4paper, total={6.8in, 9.25in}]{geometry}
+\usepackage{graphicx}
+\graphicspath{ {./assets/images/output/} }
+\usepackage{caption}
+\usepackage[english]{babel}
+\usepackage{titling}
+\usepackage{float}
+\usepackage{amsmath}
+\usepackage{algorithm}
+\usepackage{algorithmicx}
+\usepackage{algpseudocode}
+\usepackage{minted}
+\usepackage{multicol}
+\usepackage{array}
+\usepackage{setspace}
+\usepackage{placeins}
+\usepackage{tcolorbox}
+\usepackage{caption}
+\usepackage{subcaption}
+
+\definecolor{verbgray}{gray}{.95}
+\setminted{
+    bgcolor=verbgray,
+    baselinestretch=1,
+    fontsize=\footnotesize,
+    linenos,
+    breaklines=true,
+    breakanywhere=true,
+    xleftmargin=\parindent
+}
+\title{Implementation \& Evaluation of Multi-Class Support Vector Machine (SVM)}
+\author{}
+\date{}
+
+\pagenumbering{gobble}
+\begin{document}
+\input{ml_cover.tex}
+
+\pagebreak
+
+\tableofcontents
+
+\pagebreak
+\pagenumbering{arabic}
+\maketitle
+
+\section{Theory and Introduction}
+The Support Vector Machine (SVM) is a powerful supervised machine learning algorithm primarily used for classification tasks. Unlike standard classifiers that output probabilities, SVM acts as a maximum margin classifier. It maps training examples to points in space so as to maximize the width of the gap between different categories \cite{bishop2006pattern}. Figure \ref{fig:svm_theory} illustrates the core components of this architecture, highlighting the optimal decision boundary, the maximized margin, and the critical support vectors that anchor the boundary.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.37\textwidth]{svm.png}
+    \caption{Conceptual illustration of a binary Support Vector Machine. The algorithm identifies the optimal hyperplane that maximizes the margin gap between Class A and Class B. The data points lying directly on the margin boundaries are the support vectors.}
+    \label{fig:svm_theory}
+\end{figure}
+
+Standard SVMs are strictly binary classifiers. To handle multi-class datasets, meta-strategies such as the One-vs-Rest (OvR) approach must be implemented.
+
+\subsection{Binary SVM and Hinge Loss}
+For a binary classification task where labels $y \in \{-1, 1\}$, a linear SVM attempts to find a hyperplane $w^T x + b = 0$ that separates the classes. The objective is to minimize the Hinge Loss with $L_2$ regularization:
+\begin{equation}
+    J(w, b) = \lambda ||w||^2 + \frac{1}{n} \sum_{i=1}^{n} \max(0, 1 - y_i(w^T x_i + b))
+\end{equation}
+Where $\lambda$ acts as the regularization parameter controlling the margin width. A larger $\lambda$ creates a wider (soft) margin, while a smaller $\lambda$ enforces a strict (hard) margin.
+
+\subsection{Optimization via Stochastic Gradient Descent}
+The parameters are optimized using Stochastic Gradient Descent (SGD). If a sample is correctly classified and lies strictly outside the margin ($y_i(w^T x_i + b) \geq 1$), the gradient only depends on the regularization term:
+\begin{equation}
+    w \gets w - \alpha (2\lambda w)
+\end{equation}
+If the sample is misclassified or lies within the margin, the gradient incorporates the sample's features:
+\begin{equation}
+    w \gets w - \alpha (2\lambda w - y_i x_i)
+\end{equation}
+\begin{equation}
+    b \gets b - \alpha (-y_i)
+\end{equation}
+
+\subsection{One-vs-Rest (OvR) Strategy}
+To classify $K$ classes, $K$ separate binary SVM models are trained. The $k$-th classifier is trained to separate the data belonging to class $k$ (labeled as $+1$) from all other classes (labeled as $-1$). For a new input $x$, the class is assigned to the classifier that yields the highest confidence score $w^T x + b$:
+\begin{equation}
+    \hat{y} = \arg\max_{k \in \{1, \dots, K\}} (w_k^T x + b_k)
+\end{equation}
+
+\section{Methodology}
+
+\subsection{Dataset}
+The \textit{Iris} dataset was utilized, containing three distinct classes (\textit{Setosa}, \textit{Versicolor}, and \textit{Virginica}). The dataset was standardized, and the labels were mapped appropriately for the OvR strategy. Two features (Petal Length and Petal Width) were used to allow for 2D visualization of the decision boundaries \cite{fisher1936use}.
+
+\subsection{Algorithms}
+\begin{algorithm}[H]
+    \caption{Multi-Class SVM (One-vs-Rest Training)}
+    \begin{algorithmic}[1]
+        \State \textbf{Input:} Training Data $(X, Y)$ with $K$ classes, $\lambda$, $\alpha$, $epochs$
+        \State \textbf{Initialize:} $K$ instances of Binary SVMs
+        \For{$k = 1$ to $K$}
+        \State $Y_{binary} \gets \{1 \text{ if } y_i == k \text{ else } -1 \text{ for } y_i \in Y\}$
+        \State \textbf{Train} Model$_k$ on $(X, Y_{binary})$ using Hinge Loss and SGD
+        \EndFor
+        \State \Return array of trained models
+    \end{algorithmic}
+\end{algorithm}
+
+\subsection{Code}
+The implementation was done in Python using NumPy for matrix operations. The training loop iteratively updates the weights and bias for each binary classifier based on the computed gradients from the Hinge Loss function. The decision boundaries were visualized using Matplotlib, and the evaluation metrics were calculated using Scikit-learn's classification report and confusion matrix utilities.
+
+\begin{multicols}{2}
+    \inputminted{python}{./assets/svm_3class.py}
+\end{multicols}
+
+\section{Results and Discussion}
+
+The Multi-Class SVM was trained using $K=3$ binary classifiers with a learning rate of $0.01$, a lambda parameter of $0.01$, over $1500$ epochs.
+
+\subsection{Quantitative Results}
+Based on the test split, the model achieved a high degree of accuracy. The evaluation report derived from the confusion matrix is as follows:
+
+\begin{minted}{console}
+==================================================
+ MULTI-CLASS SVM (One-vs-Rest) CLASSIFICATION
+==================================================
+Loading Iris Dataset...
+Training Multi-Class SVM (One-vs-Rest strategy)...
+  -> Training SVM 1 (Class 0 vs Rest)...
+  -> Training SVM 2 (Class 1 vs Rest)...
+  -> Training SVM 3 (Class 2 vs Rest)...
+
+========================================
+EVALUATION REPORT (3-Class)
+========================================
+Accuracy:  0.9333
+Precision (Macro): 0.9327
+Recall (Macro):    0.9393
+F1 Score (Macro):  0.9350
+
+Confusion Matrix:
+[[ 7  0  0]
+ [ 1  9  1]
+ [ 0  0 12]]
+\end{minted}
+
+The confusion matrix (Figure \ref{fig:svm_results}c) confirms that \textit{Setosa} and \textit{Virginica} were easily separated from the rest, while \textit{Versicolor} experienced minor misclassifications (one sample confused for Setosa, and one for Virginica). This aligns with the geometric reality of the dataset, where Versicolor sits in the middle of the other two classes.
+
+\subsection{Visual Analysis}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{cost.png}
+        \caption{Hinge Loss vs. Epochs}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{decision.png}
+        \caption{Decision Regions (OvR Boundary)}
+    \end{subfigure}
+
+    \vspace{0.5cm}
+    \begin{subfigure}[b]{0.5\textwidth}
+        \centering
+        \includegraphics[width=.6\textwidth]{confusion.png}
+        \caption{Multi-Class Confusion Matrix}
+    \end{subfigure}
+    \caption{Multi-Class SVM Performance Overview}
+    \label{fig:svm_results}
+\end{figure}
+
+\begin{itemize}
+    \item \textbf{Cost History (Figure \ref{fig:svm_results}a):} The cost function demonstrates distinct convergence behavior for the three models. The \textit{Setosa vs Rest} (purple) and \textit{Virginica vs Rest} (orange) models converge to a lower hinge loss compared to \textit{Versicolor vs Rest} (teal). This mathematically proves that separating the middle cluster from the extremes is harder and yields a higher residual cost.
+    \item \textbf{Decision Boundary (Figure \ref{fig:svm_results}b):} The OvR strategy successfully creates a non-linear global boundary out of three linear boundaries. The sharp angles where the colored regions meet are the exact points where the maximum confidence score $w^T x + b$ switches from one binary classifier to another.
+\end{itemize}
+
+\section{Conclusion}
+This experiment successfully demonstrated the implementation of a linear Support Vector Machine from first principles. By leveraging the One-vs-Rest (OvR) strategy, the strict binary limitation of the SVM algorithm was overcome, allowing it to accurately classify the 3-class Iris dataset with 93.33\% accuracy. The results confirm that minimizing the regularized Hinge Loss function via Stochastic Gradient Descent provides robust, maximum-margin decision boundaries.
+
+\bibliographystyle{IEEEtran}
+\renewcommand{\bibname}{References}
+\addcontentsline{toc}{section}{References}
+\bibliography{ref}
+
+\end{document}
